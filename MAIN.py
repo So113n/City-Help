@@ -1,9 +1,9 @@
 import customtkinter as ctk
 import os
-from tkinter import messagebox
-from PIL import Image
 import webbrowser
 import sqlite3
+from tkinter import messagebox
+from PIL import Image
 
 from customtkinter import CTkImage
 
