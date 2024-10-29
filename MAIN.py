@@ -79,7 +79,7 @@ def show_hospital_appointments():
 root = ctk.CTk()
 root.title("Городская справка - Новый Уренгой")
 root.geometry("600x500")
-root.configure(bg="white")
+root.configure(fg_color="white")
 
 # Загружаем логотип
 logo_image = Image.open(logo_path)  # Путь к логотипу
@@ -108,7 +108,7 @@ def create_button(text, command):
     button = ctk.CTkButton(
         button_frame, text=text, command=command,
         width=150, height=50, corner_radius=20,  # Устанавливаем конкретные размеры для всех кнопок
-        fg_color="white", text_color="black", font=("Arial", 12),
+        fg_color="white", text_color="black", font=("Arial", 13),
         anchor="center"  # Центрируем текст в кнопке
     )
     return button
