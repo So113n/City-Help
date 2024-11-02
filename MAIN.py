@@ -2,7 +2,7 @@ import customtkinter as ctk
 import os
 import webbrowser
 import sqlite3
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 from PIL import Image
 
 from customtkinter import CTkImage
@@ -62,18 +62,59 @@ def open_home_page():
 def show_personal_account():
     messagebox.showinfo("Личный кабинет", "Функция в разработке")
 
-# Функции для кнопок
+# Функция для отображения таблицы с данными "Расписание Автобусов"
+def show_table(data, columns, title):
+    table_window = ctk.CTkToplevel(root)
+    table_window.geometry("600x400")
+    table_window.title(title)
+
+    table_window.transient(root)
+    table_window.grab_set()  # Захватывает все события ввода, чтобы пользователь не мог взаимодействовать с главным окном
+    table_window.focus_set()
+
+    tree = ttk.Treeview(table_window, columns=columns, show="headings")
+    for col in columns:
+        tree.heading(col, text=col)
+    for row in data:
+        tree.insert("", "end", values=row)
+    tree.pack(expand=True, fill="both")
+
+    # Фрейм для кнопок "Закрыть" и "Карты"
+    button_frame = ctk.CTkFrame(table_window)
+    button_frame.pack(fill="x", pady=10)
+
+    # Кнопка "Закрыть"
+    close_button = ctk.CTkButton(table_window, text="Закрыть", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=table_window.destroy)
+    close_button.pack(side="left", pady=0)
+
+    # Кнопка "Карты" справа
+    map_button = ctk.CTkButton(button_frame, text="Карты", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=open_map)
+    map_button.pack(side="right", padx=20)
+
+def open_map():
+    # Здесь можно добавить код для открытия карты
+    print("Открытие карты...")
+
+# Функции для кнопок, которые будут показывать данные из базы
 def show_bus_schedule():
-    messagebox.showinfo("Справка", "Здесь будет расписание автобусов.")
+    columns = ("Маршрут", "Будние дни", "Выходные дни")
+    data = get_bus_schedule()
+    show_table(data, columns, "Расписание Автобусов")
 
 def show_train_air_schedule():
-    messagebox.showinfo("Справка", "Здесь будет расписание ЖД и авиа транспорта.")
+    columns = ("Тип транспорта", "Назначение", "Время отправления", "Время прибытия")
+    data = get_train_air_schedule()
+    show_table(data, columns, "Расписание ЖД и Авиа транспорта")
 
 def show_admin_reception():
-    messagebox.showinfo("Справка", "Здесь будет информация о приеме администрации Нового Уренгоя.")
+    columns = ("Отдел", "Контактная информация", "Часы работы")
+    data = get_admin_reception()
+    show_table(data, columns, "Прием Администрации Нового Уренгоя")
 
 def show_hospital_appointments():
-    messagebox.showinfo("Справка", "Здесь будет расписание приема врачей в НУР НЦГБ.")
+    columns = ("Имя врача", "Специальность", "Доступные дни", "Часы приема")
+    data = get_hospital_appointments()
+    show_table(data, columns, "Запись на прием к врачу")
 
 # Создаем главное окно
 root = ctk.CTk()
