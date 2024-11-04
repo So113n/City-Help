@@ -2,8 +2,8 @@ import customtkinter as ctk
 import os
 import webbrowser
 import sqlite3
-from tkinter import messagebox, ttk
-from PIL import Image
+from tkinter import messagebox, ttk, Toplevel
+from PIL import Image, ImageTk
 
 from customtkinter import CTkImage
 
@@ -80,20 +80,86 @@ def show_table(data, columns, title):
     tree.pack(expand=True, fill="both")
 
     # Фрейм для кнопок "Закрыть" и "Карты"
-    button_frame = ctk.CTkFrame(table_window)
-    button_frame.pack(fill="x", pady=10)
+    button_frame_inner = ctk.CTkFrame(table_window)
+    button_frame_inner.pack(fill="x", pady=10)
 
-    # Кнопка "Закрыть"
-    close_button = ctk.CTkButton(table_window, text="Закрыть", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=table_window.destroy)
-    close_button.pack(side="left", pady=0)
+    # Настройка сетки с тремя колонками
+    button_frame_inner.grid_columnconfigure(0, weight=1)
+    button_frame_inner.grid_columnconfigure(1, weight=0)
+    button_frame_inner.grid_columnconfigure(2, weight=1)
+
+    # Кнопка "Закрыть" слева
+    close_button = ctk.CTkButton(button_frame_inner, text="Закрыть", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=table_window.destroy)
+    close_button.grid(row=0, column=0, padx=(20, 0), pady=0, sticky="w")
 
     # Кнопка "Карты" справа
-    map_button = ctk.CTkButton(button_frame, text="Карты", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=open_map)
-    map_button.pack(side="right", padx=20)
+    map_button = ctk.CTkButton(button_frame_inner, text="Карты", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=open_map)
+    map_button.grid(row=0, column=2, padx=(0,20), pady=0, sticky='e')
 
+# Функция для отображения карт с переключением
 def open_map():
-    # Здесь можно добавить код для открытия карты
-    print("Открытие карты...")
+    map_images_paths = [
+        os.path.join(base_dir, "Logos", "map1.png"),
+        os.path.join(base_dir, "Logos", "map2.png"),
+        os.path.join(base_dir, "Logos", "map3.png"),
+        os.path.join(base_dir, "Logos", "map4.png")
+    ]
+
+    # Проверка на существование файлов карт
+    for path in map_images_paths:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Карта не найдена по пути: {path}")
+
+    # Инициализация окна карты и текущего индекса изображения
+    map_window = Toplevel(root)
+    map_window.title("Карта маршрутов")
+    map_window.geometry("1607x957")
+    map_window.transient(root)
+    map_window.grab_set()
+    map_window.focus_set()
+
+    current_index = 0
+
+    # Создаем список объектов CTkImage для всех карт
+    ctk_images = [
+        CTkImage(light_image=Image.open(path), size=(1607, 815))
+        for path in map_images_paths
+    ]
+
+    def update_map_image():
+        map_label.configure(image=ctk_images[current_index])
+
+    def next_image():
+        nonlocal current_index
+        current_index = (current_index + 1) % len(map_images_paths) % len(ctk_images)
+        update_map_image()
+
+    def prev_image():
+        nonlocal current_index
+        current_index = (current_index - 1) % len(map_images_paths) % len(ctk_images)
+        update_map_image()
+
+    # Загрузка и отображение начального изображения карты
+    map_image = Image.open(map_images_paths[current_index])
+    map_image = map_image.resize((1607, 815), Image.LANCZOS)
+    map_photo = ImageTk.PhotoImage(map_image)
+
+    # Виджет для отображения изображения карты
+    map_label = ctk.CTkLabel(map_window, image=ctk_images[current_index], text="")
+    map_label.pack()
+
+    # Кнопки для навигации по изображениям
+    navigation_frame = ctk.CTkFrame(map_window)
+    navigation_frame.pack(pady=10)
+
+    prev_button = ctk.CTkButton(navigation_frame, text="Предыдущая", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=30, command=prev_image)
+    prev_button.pack(side="left", padx=10)
+
+    next_button = ctk.CTkButton(navigation_frame, text="Следующая", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=30, command=next_image)
+    next_button.pack(side="right", padx=10)
+
+    close_button = ctk.CTkButton(map_window, text="Закрыть", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=map_window.destroy)
+    close_button.pack(pady=10)
 
 # Функции для кнопок, которые будут показывать данные из базы
 def show_bus_schedule():
