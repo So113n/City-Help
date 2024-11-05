@@ -82,7 +82,8 @@ def show_table(data, columns, title):
 
     tree = ttk.Treeview(table_window, columns=columns, show="headings")
     for col in columns:
-        tree.heading(col, text=col)
+        tree.heading(col, text=col, anchor="center")
+        tree.column(col, anchor="center")
     for row in data:
         tree.insert("", "end", values=row)
     tree.pack(expand=True, fill="both")
