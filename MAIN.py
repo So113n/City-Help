@@ -29,13 +29,21 @@ def get_bus_schedule():
     return bus_schedule
 
 # Получение расписания ЖД и авиа транспорта
-def get_train_air_schedule():
+def get_air_schedule():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT transport_type, destination, departure_time, arrival_time FROM train_air_schedule")
-    train_air_schedule = cursor.fetchall()
+    cursor.execute("SELECT id, logo_path, route, status FROM air_schedule")
+    air_schedule = cursor.fetchall()
     conn.close()
-    return train_air_schedule
+    return air_schedule
+
+def get_train_schedule():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, route, time, status FROM train_schedule")
+    train_schedule = cursor.fetchall()
+    conn.close()
+    return train_schedule
 
 # Получение информации о приеме администрации
 def get_admin_reception():
