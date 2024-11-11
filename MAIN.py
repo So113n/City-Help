@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import os
+import sys
 import webbrowser
 import sqlite3
 from tkinter import messagebox, ttk, Toplevel
@@ -14,6 +15,15 @@ logo_path = os.path.join(base_dir, "Logos", "main_logo.png")  # Путь к ло
 # Проверка на существование файла с логотипом
 if not os.path.exists(logo_path):
     raise FileNotFoundError(f"Логотип не найден по пути: {logo_path}")
+
+if getattr(sys, 'frozen', False):
+    # Программа запущена из .exe, путь меняется
+    base_path = sys._MEIPASS
+else:
+    # Программа запущена из .py, стандартный путь
+    base_path = os.path.abspath(".")
+
+image_path = os.path.join(base_path, "Logos", "main_logo.png")
 
 # Функция для подключения к базе данных
 def get_connection():
