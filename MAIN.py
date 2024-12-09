@@ -3,7 +3,7 @@ import os
 import sys
 import webbrowser
 import sqlite3
-from tkinter import messagebox, ttk, Toplevel
+from tkinter import messagebox, ttk, Toplevel, Tk, Button, Label, Entry
 from PIL import Image, ImageTk
 
 from customtkinter import CTkImage
@@ -292,58 +292,157 @@ def show_admin_reception():
     table_window.geometry("1333x626")
     table_window.title("Прием Администрации Нового Уренгоя")
 
-    # Настройка, чтобы это окно было модальным
     table_window.transient(root)
     table_window.grab_set()
     table_window.focus_set()
 
-    # Заголовок для таблицы
     ctk.CTkLabel(table_window, text="Прием Администрации Нового Уренгоя", font=("Arial", 30)).pack(pady=10)
 
-    # Загрузка и изменение размера логотипа
     original_image = Image.open("Logos/gerb_logo.png")
-    resized_image = original_image.resize((150, 150), Image.LANCZOS)  # Изменение размера до 150x150
+    resized_image = original_image.resize((150, 150), Image.LANCZOS)
     logo_image = ImageTk.PhotoImage(resized_image)
-
-    # Отображение логотипа
-    logo_label = ctk.CTkLabel(table_window, image=logo_image, text="")  # Пустой текст, чтобы не показывался текст рядом с изображением
-    logo_label.image = logo_image  # Сохранение ссылки на изображение
+    logo_label = ctk.CTkLabel(table_window, image=logo_image, text="")
+    logo_label.image = logo_image
     logo_label.pack(pady=10)
 
-    # Таблица Администрации
     ctk.CTkLabel(table_window, text="Время приемов департаментов г. Нового Уренгоя", font=("Arial", 16)).pack()
-    admin_tree = ttk.Treeview(table_window, columns=("Номер Департамента", "Департамент", "Контактная информация", "Время работы и приема"), show="headings")
+    admin_tree = ttk.Treeview(
+        table_window,
+        columns=("Номер Департамента", "Департамент", "Контактная информация", "Время работы и приема"),
+        show="headings"
+    )
     admin_tree.heading("Номер Департамента", text="Номер Департамента")
     admin_tree.heading("Департамент", text="Департамент")
     admin_tree.heading("Контактная информация", text="Контактная информация")
     admin_tree.heading("Время работы и приема", text="Время работы и приема")
 
-    # Центрируем текст в столбцах
     for col in ("Номер Департамента", "Департамент", "Контактная информация", "Время работы и приема"):
         admin_tree.column(col, anchor="center")
 
     admin_tree.pack(expand=True, fill="x", pady=5)
 
-    # Загрузка данных из базы данных
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        # Получаем данные для авиа расписания
-        cursor.execute("SELECT id, department, contact_info, working_hours FROM admin_reception")
-        air_schedule = cursor.fetchall()
-        for row in air_schedule:
-            id_, department, contact_info, working_hours = row
-            admin_tree.insert("", "end", values=(id_, department, contact_info, working_hours))
-
-    except sqlite3.Error as e:
+    # Функция для загрузки данных в таблицу
+    def load_admin_data():
+        admin_tree.delete(*admin_tree.get_children())
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, department, contact_info, working_hours FROM admin_reception")
+            admin_data = cursor.fetchall()
+            for row in admin_data:
+                admin_tree.insert("", "end", values=row)
+        except sqlite3.Error as e:
             messagebox.showerror("Ошибка базы данных", f"Ошибка при получении данных: {e}")
-    finally:
-     conn.close()
+        finally:
+            conn.close()
 
-    # Фрейм для кнопки "Закрыть"
-    close_button = ctk.CTkButton(table_window, text="Закрыть", fg_color="#1E90FF", text_color="white", font=("Arial", 15), corner_radius=20, command=table_window.destroy)
-    close_button.pack(pady=10)
+    load_admin_data()
+
+    # Функция для удаления отдела
+    def delete_admin():
+        selected_item = admin_tree.selection()  # Получаем выбранную строку
+        if not selected_item:
+            messagebox.showwarning("Предупреждение", "Выберите отдел для удаления!")
+            return
+
+        try:
+            # Получаем ID выбранной строки
+            item = admin_tree.item(selected_item)
+            department_id = item["values"][0]
+
+            # Удаляем запись из базы данных
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM admin_reception WHERE id = ?", (department_id,))
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo("Успех", "Отдел успешно удален!")
+            load_admin_data()  # Обновляем таблицу
+        except sqlite3.Error as e:
+            messagebox.showerror("Ошибка базы данных", f"Ошибка при удалении отдела: {e}")
+
+    # Кнопка для открытия формы добавления отдела
+    def open_add_admin_form():
+        form = Toplevel(table_window)
+        form.title("Добавить отдел")
+        form.geometry("400x300")
+        form.configure(bg="#333333")
+        form.transient(table_window)
+        form.grab_set()
+
+        Label(form, text="Название отдела:", bg="#333333", fg="#FFFFFF").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        department_entry = Entry(form, width=30, state="normal")
+        department_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        Label(form, text="Контактная информация:", bg="#333333", fg="#FFFFFF").grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        contact_entry = Entry(form, width=30, state="normal")
+        contact_entry.grid(row=1, column=1, padx=10, pady=10)
+
+        Label(form, text="Часы работы:", bg="#333333", fg="#FFFFFF").grid(row=2, column=0, padx=10, pady=10, sticky="w")
+        working_hours_entry = Entry(form, width=30, state="normal")
+        working_hours_entry.grid(row=2, column=1, padx=10, pady=10)
+
+        def save_admin():
+            department = department_entry.get().strip()
+            contact_info = contact_entry.get().strip()
+            working_hours = working_hours_entry.get().strip()
+
+            if not department:
+                messagebox.showerror("Ошибка", "Название отдела обязательно для заполнения!")
+                return
+
+            try:
+                conn = sqlite3.connect("city_reference.db")
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO admin_reception (department, contact_info, working_hours)
+                    VALUES (?, ?, ?)
+                """, (department, contact_info, working_hours))
+                conn.commit()
+                conn.close()
+                messagebox.showinfo("Успех", "Запись успешно добавлена!")
+                form.destroy()
+                load_admin_data()  # Обновляем таблицу
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось сохранить данные: {e}")
+
+        add_button = ctk.CTkButton(
+            form, text="Добавить", fg_color="#1E90FF", text_color="white",
+            font=("Arial", 15), corner_radius=20, command=save_admin
+        )
+        add_button.grid(row=3, column=0, padx=10, pady=20, sticky="e")
+
+        cancel_button = ctk.CTkButton(
+            form, text="Назад", fg_color="#1E90FF", text_color="white",
+            font=("Arial", 15), corner_radius=20, command=form.destroy
+        )
+        cancel_button.grid(row=3, column=1, padx=10, pady=20, sticky="w")
+
+    # Кнопки внизу окна
+    button_frame = ctk.CTkFrame(table_window)
+    button_frame.pack(pady=10)
+
+    add_button = ctk.CTkButton(
+        button_frame, text="Добавить отдел", fg_color="#1E90FF",
+        text_color="white", font=("Arial", 15), corner_radius=20,
+        command=open_add_admin_form
+    )
+    add_button.pack(side="left", padx=10)
+
+    delete_button = ctk.CTkButton(
+        button_frame, text="Удалить отдел", fg_color="#FF4500",
+        text_color="white", font=("Arial", 15), corner_radius=20,
+        command=delete_admin
+    )
+    delete_button.pack(side="left", padx=10)
+
+    close_button = ctk.CTkButton(
+        button_frame, text="Закрыть", fg_color="#1E90FF",
+        text_color="white", font=("Arial", 15), corner_radius=20,
+        command=table_window.destroy
+    )
+    close_button.pack(side="right", padx=10)
 
 def show_hospital_appointments():
     table_window = ctk.CTkToplevel(root)
